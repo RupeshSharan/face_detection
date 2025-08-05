@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Face Detection Hub</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #3b82f6;
+            --primary-hover-color: #2563eb;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            background-color: var(--surface-color);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+        }
+
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        video { display: none; }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            background-color: #000;
+        }
+        
+        #loader {
+            position: absolute;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--border-color);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .card {
+            background-color: var(--background-color);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-switch {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .toggle-switch label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+        
+        .toggle-switch input[type="radio"] {
+            display: none;
+        }
+        
+        .toggle-switch .icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            margin-right: 15px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        
+        .toggle-switch input[type="radio"]:checked + .icon {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .toggle-switch label:hover .icon {
+            border-color: var(--primary-color);
+        }
+        
+        .toggle-switch input[type="radio"]:checked + .icon + span {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        #snapshot-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #snapshot-btn:hover {
+            background-color: var(--primary-hover-color);
+        }
+
+        #status-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1rem;
+        }
+
+        #status-display .icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        #face-count-value {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .main-container {
+                padding: 15px;
+            }
+            .card h2 {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="video-container">
+            <div id="loader">
+                <div class="spinner"></div>
+                <span>Accessing Webcam...</span>
+            </div>
+            <video id="video" width="640" height="480" autoplay muted></video>
+            <canvas id="canvas" width="640" height="480"></canvas>
+        </div>
+        
+        <div class="controls-container">
+            <div class="card">
+                <h2><i class="fa-solid fa-sliders" style="margin-right: 10px;"></i>Controls</h2>
+                <div class="toggle-switch">
+                    <label>
+                        <input type="radio" name="mode" value="box" checked>
+                        <div class="icon"><i class="fa-solid fa-vector-square"></i></div>
+                        <span>Bounding Box</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="mode" value="blur">
+                        <div class="icon"><i class="fa-solid fa-eye-slash"></i></div>
+                        <span>Anonymize (Blur)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i class="fa-solid fa-chart-simple" style="margin-right: 10px;"></i>Status</h2>
+                <div id="status-display">
+                    <div class="icon"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <span style="color: var(--text-secondary);">Faces Detected</span><br>
+                        <span id="face-count-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <button id="snapshot-btn">
+                <i class="fa-solid fa-camera"></i>
+                <span>Take Snapshot</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const loader = document.getElementById('loader');
+        const faceCountSpan = document.getElementById('face-count-value');
+        const snapshotBtn = document.getElementById('snapshot-btn');
+        let isProcessing = false;
+
+        // Hide canvas initially, show loader
+        canvas.style.display = 'none';
+
+        // Access Webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    // Hide loader and show canvas when video starts
+                    loader.style.display = 'none';
+                    canvas.style.display = 'block';
+                    setInterval(processFrame, 100);
+                };
+            })
+            .catch(err => {
+                console.error("Error accessing webcam: ", err);
+                loader.innerHTML = 'Error: Could not access webcam. Please grant permission and refresh.';
+            });
+
+        // Process and Send Frames
+        async function processFrame() {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageDataURL = canvas.toDataURL('image/jpeg');
+            const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+
+            try {
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageDataURL, mode: selectedMode }),
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+
+                const image = new Image();
+                image.src = data.image;
+                image.onload = () => {
+                    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    faceCountSpan.textContent = data.face_count;
+                };
+
+            } catch (error) {
+                console.error('Error processing frame:', error);
+            } finally {
+                isProcessing = false;
+            }
+        }
+
+        // Snapshot Functionality
+        snapshotBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `face-detection-snapshot-${new Date().toISOString()}.jpeg`;
+            link.href = canvas.toDataURL('image/jpeg', 0.9); // Use high quality for snapshot
+            link.click();
+        });
+    </script>
+</body>
+</html>
